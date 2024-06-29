@@ -29,8 +29,10 @@ var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
 var ORIGIN_Y = merlinSlider(-100, 100, 33, 0.1);
 var D_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
 var D_MOTION = merlinSlider(-1, 1, 0, 0.001);
-var ROTATION_SCALAR = merlinSlider(0, 2, 1, 0.001);
+var ROTATION_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
 var ROTATION_MOTION = merlinSlider(-1, 1, 0, 0.01);
+var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
+var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001);
 var PROPORTION_DEADZONE = merlinSlider(0, 10, 0, 0.01);
 var SCALE_CURVE = merlinCurve("identity");
 
@@ -42,6 +44,7 @@ let noiseYOffset = 0;
 let noise2XOffset = 0;
 let noise2YOffset = 0;
 let dOffset = 0;
+let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 3;
 const SHOW_SPECTROGRAPH = true;
@@ -56,7 +59,7 @@ function setup() {
   const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, dist_pos);
   const pixelToNoise = createSimplex3DMap(
     rotation_pos,
-    dist_pos,
+    pulse_dist_pos,
     (x, y) => simplexMap1(x, y) * NOISE2_SCALAR
   );
 
@@ -94,13 +97,18 @@ function upsnarf() {
   noise2XOffset += NOISE2_X_MOTION;
   noise2YOffset += NOISE2_Y_MOTION;
   dOffset += D_MOTION;
+  rotationOffset += ROTATION_MOTION;
 }
+
+let energyCacheHack = undefined;
+
 function render() {
   const normalizedSmoothedEnergies = getEnergies();
   const rawEnergies = getRawEnergies();
   const energies = rawEnergies.map((x, i) => {
     return x * normalizedSmoothedEnergies[i];
   });
+  energyCacheHack = energies;
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       let cum = pixelToCum(x, y);
@@ -257,6 +265,9 @@ const y2_pos = (x, y) => (y + noise2YOffset) * NOISE2_Y_SCALAR;
 const t_pos = (x, y) => frameCount / 60;
 const dist_pos = (x, y) =>
   (Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) + dOffset) * D_SCALAR;
+const pulse_dist_pos = (x, y) =>
+  dist_pos(x, y) -
+  (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE : 0);
 
 function calculateAngle(x1, y1, x2, y2) {
   // Calculate the angle in radians
@@ -269,7 +280,7 @@ function calculateAngle(x1, y1, x2, y2) {
 }
 
 const rotation_pos = (x, y) =>
-  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR;
+  (calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) + rotationOffset) * ROTATION_SCALAR;
 const zero_pos = (...args) => 0;
 
 // UTILS
