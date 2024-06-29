@@ -14,30 +14,84 @@ let cumToOctave;
 let getEnergies;
 let getRawEnergies;
 let cumUniformizer;
-var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001);
-var HUE_RANGE = merlinSlider(-100, 100, 0, 0.001);
+var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x4a");
+var HUE_RANGE = merlinSlider(
+  -100,
+  100,
+  0,
+  0.001,
+  "Impact LX25+ MIDI1:0xb0:0x4e"
+);
 var NOISE_X_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
 var NOISE_X_MOTION = merlinSlider(-1, 1, 0, 0.001);
 var NOISE_Y_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
 var NOISE_Y_MOTION = merlinSlider(-1, 1, 0, 0.001);
-var NOISE2_SCALAR = merlinSlider(0, 20, 5, 0.001);
-var NOISE2_X_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var NOISE2_X_MOTION = merlinSlider(-1, 1, 0, 0.001);
-var NOISE2_Y_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var NOISE2_Y_MOTION = merlinSlider(-1, 1, 0, 0.001);
+var NOISE2_SCALAR = merlinSlider(
+  0,
+  20,
+  5,
+  0.001,
+  "Impact LX25+ MIDI2:0xbf:0x3f"
+);
+var NOISE2_X_SCALAR = merlinSlider(
+  0,
+  2,
+  0.1,
+  0.001,
+  "Impact LX25+ MIDI2:0xbf:0x38"
+);
+var NOISE2_X_MOTION = merlinSlider(
+  -1,
+  1,
+  0,
+  0.001,
+  "Impact LX25+ MIDI2:0xbf:0x39"
+);
+var NOISE2_Y_SCALAR = merlinSlider(
+  0,
+  2,
+  0.1,
+  0.001,
+  "Impact LX25+ MIDI2:0xbf:0x3d"
+);
+var NOISE2_Y_MOTION = merlinSlider(
+  -1,
+  1,
+  0,
+  0.001,
+  "Impact LX25+ MIDI2:0xbf:0x3c"
+);
 var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
 var ORIGIN_Y = merlinSlider(-100, 100, 33, 0.1);
-var D_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var D_MOTION = merlinSlider(-1, 1, 0, 0.001);
-var ROTATION_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var ROTATION_MOTION = merlinSlider(-1, 1, 0, 0.01);
+var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Impact LX25+ MIDI1:0xb0:0x54");
+var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0xa");
+var ROTATION_SCALAR = merlinSlider(
+  0,
+  0.5,
+  0.1,
+  0.001,
+  "Impact LX25+ MIDI1:0xb0:0x5"
+);
+var ROTATION_MOTION = merlinSlider(
+  -1,
+  1,
+  0,
+  0.01,
+  "Impact LX25+ MIDI1:0xb0:0x4d"
+);
 var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
-var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001);
-var PROPORTION_DEADZONE = merlinSlider(0, 10, 0, 0.01);
+var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x47");
+var PROPORTION_DEADZONE = merlinSlider(
+  0,
+  15,
+  0,
+  0.01,
+  "Impact LX25+ MIDI1:0xb0:0x4c"
+);
 var SCALE_CURVE = merlinCurve("identity");
 
 var ROLLING_FRAME_COUNT = 1;
-var SMOOTHING_COEFF = 0.5;
+var SMOOTHING_COEFF = 0.4;
 
 let noiseXOffset = 0;
 let noiseYOffset = 0;
@@ -47,7 +101,7 @@ let dOffset = 0;
 let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 3;
-const SHOW_SPECTROGRAPH = true;
+const SHOW_SPECTROGRAPH = false;
 
 function setup() {
   canvas = createCanvas(43, 66).canvas;
@@ -56,7 +110,7 @@ function setup() {
   noise = new OpenSimplexNoise(Date.now());
 
   // OPTIONS
-  const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, dist_pos);
+  const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, zero_pos);
   const pixelToNoise = createSimplex3DMap(
     rotation_pos,
     pulse_dist_pos,
