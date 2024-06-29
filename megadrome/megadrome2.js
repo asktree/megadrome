@@ -62,7 +62,7 @@ var NOISE2_Y_MOTION = merlinSlider(
   "Impact LX25+ MIDI2:0xbf:0x3c"
 );
 var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
-var ORIGIN_Y = merlinSlider(-100, 100, 33, 0.1);
+var ORIGIN_Y = merlinSlider(0, 66, 33, 0.1, "Impact LX25+ MIDI1:0xe0:0x0");
 var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Impact LX25+ MIDI1:0xb0:0x54");
 var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0xa");
 var ROTATION_SCALAR = merlinSlider(
@@ -73,8 +73,8 @@ var ROTATION_SCALAR = merlinSlider(
   "Impact LX25+ MIDI1:0xb0:0x5"
 );
 var ROTATION_MOTION = merlinSlider(
-  -1,
-  1,
+  -5,
+  5,
   0,
   0.01,
   "Impact LX25+ MIDI1:0xb0:0x4d"
@@ -83,15 +83,16 @@ var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
 var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x47");
 var PROPORTION_DEADZONE = merlinSlider(
   0,
-  15,
+  25,
   0,
   0.01,
   "Impact LX25+ MIDI1:0xb0:0x4c"
 );
+
 var SCALE_CURVE = merlinCurve("identity");
 
 var ROLLING_FRAME_COUNT = 1;
-var SMOOTHING_COEFF = 0.4;
+var SMOOTHING_COEFF = 0.5;
 
 let noiseXOffset = 0;
 let noiseYOffset = 0;
@@ -100,7 +101,7 @@ let noise2YOffset = 0;
 let dOffset = 0;
 let rotationOffset = 0;
 
-const HISTORY_BUFFER_SECONDS = 3;
+const HISTORY_BUFFER_SECONDS = 8;
 const SHOW_SPECTROGRAPH = false;
 
 function setup() {
