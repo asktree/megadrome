@@ -137,7 +137,7 @@ function setup() {
   // * proportionalCumOctaveMap(minimum) -- each octave gets # of pixels proportional to volume
   //   minimum (poorly named) sets a base volume for each frequency
   //
-  cumToOctave = proportionalCumOctaveMap(0);
+  cumToOctave = proportionalCumOctaveMap(-0.35);
 }
 
 function draw() {
@@ -147,12 +147,12 @@ function draw() {
 
 // update wuz taken
 function upsnarf() {
-  noiseXOffset += NOISE_X_MOTION;
-  noiseYOffset += NOISE_Y_MOTION;
-  noise2XOffset += NOISE2_X_MOTION;
-  noise2YOffset += NOISE2_Y_MOTION;
-  dOffset += D_MOTION;
-  rotationOffset += ROTATION_MOTION;
+  noiseXOffset += NOISE_X_MOTION * NOISE_X_SCALAR;
+  noiseYOffset += NOISE_Y_MOTION * NOISE_Y_SCALAR;
+  noise2XOffset += NOISE2_X_MOTION * NOISE2_X_SCALAR;
+  noise2YOffset += NOISE2_Y_MOTION * NOISE2_Y_SCALAR;
+  dOffset += D_MOTION * D_SCALAR;
+  rotationOffset += ROTATION_MOTION * ROTATION_SCALAR;
 }
 
 let energyCacheHack = undefined;
@@ -313,13 +313,13 @@ function createSimplexMap(f, g, h, i) {
 
 // PIXEL (x, y) -> NOISE POS
 // ----------------
-const x_pos = (x, y) => (x + noiseXOffset) * NOISE_X_SCALAR;
-const x2_pos = (x, y) => (x + noise2XOffset) * NOISE2_X_SCALAR;
-const y_pos = (x, y) => (y + noiseYOffset) * NOISE_Y_SCALAR;
-const y2_pos = (x, y) => (y + noise2YOffset) * NOISE2_Y_SCALAR;
+const x_pos = (x, y) => x * NOISE_X_SCALAR + noiseXOffset;
+const x2_pos = (x, y) => x * NOISE2_X_SCALAR + noise2XOffset;
+const y_pos = (x, y) => y * NOISE_Y_SCALAR + noiseYOffset;
+const y2_pos = (x, y) => y * NOISE2_Y_SCALAR + noise2YOffset;
 const t_pos = (x, y) => frameCount / 60;
 const dist_pos = (x, y) =>
-  (Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) + dOffset) * D_SCALAR;
+  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR + dOffset;
 const pulse_dist_pos = (x, y) =>
   dist_pos(x, y) -
   (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE : 0);
@@ -335,7 +335,7 @@ function calculateAngle(x1, y1, x2, y2) {
 }
 
 const rotation_pos = (x, y) =>
-  (calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) + rotationOffset) * ROTATION_SCALAR;
+  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR + rotationOffset;
 const zero_pos = (...args) => 0;
 
 // UTILS
