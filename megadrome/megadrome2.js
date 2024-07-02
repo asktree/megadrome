@@ -81,6 +81,10 @@ var ROTATION_MOTION = merlinSlider(
 );
 var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
 var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x47");
+
+/** used by proportional octave mapping,
+ * sets the energy level of a fake octave that is always black.
+ * without this, all pixels would be lit up at all times. */
 var PROPORTION_DEADZONE = merlinSlider(
   0,
   25,
@@ -88,6 +92,9 @@ var PROPORTION_DEADZONE = merlinSlider(
   0.01,
   "Impact LX25+ MIDI1:0xb0:0x4c"
 );
+/** used by proportional octave mapping,
+ * gain on each octave, used only for proportion, not brightness */
+var PROPORTION_GAIN = merlinSlider(-0.9, 0.9, 0, 0.01);
 
 var SCALE_CURVE = merlinCurve("identity");
 
@@ -134,10 +141,10 @@ function setup() {
 
   // OPTIONS:
   // * uniformCumOctaveMap -- each octave gets equal # of pixels
-  // * proportionalCumOctaveMap(minimum) -- each octave gets # of pixels proportional to volume
+  // * proportionalCumOctaveMap() -- each octave gets # of pixels proportional to volume
   //   minimum (poorly named) sets a base volume for each frequency
   //
-  cumToOctave = proportionalCumOctaveMap(-0.35);
+  cumToOctave = proportionalCumOctaveMap();
 }
 
 function draw() {
@@ -271,15 +278,15 @@ function uniformCumOctaveMap(cum, energies) {
 }
 
 // This makes the distribution of octaves based on the relative volumes of each octave
-const proportionalCumOctaveMap = (minimum) => (cum, energies) => {
+const proportionalCumOctaveMap = () => (cum, energies) => {
   // add a null octave with a fixed energy level to create dark area
   const energiesWithDeadzone = [...energies, PROPORTION_DEADZONE];
   const energySum = energiesWithDeadzone.reduce(
-    (partialSum, e) => partialSum + Math.max(e + minimum, 0),
+    (partialSum, e) => partialSum + Math.max(e + PROPORTION_GAIN, 0),
     0
   );
   const proportions = energiesWithDeadzone.map(
-    (e) => Math.max(e + minimum, 0) / energySum
+    (e) => Math.max(e + PROPORTION_GAIN, 0) / energySum
   );
   const uniformizedCum = cumUniformizer(cum);
 
