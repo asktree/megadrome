@@ -207,7 +207,7 @@ function createEnergyGetter() {
     fft.analyze();
     const bands = fft.getOctaveBands(1);
     const bandEnergies = fft.logAverages(bands);
-    return bandEnergies.map((x) => x / 255).slice(0, -2); //can do slice(0, -2) to cut last 2 octaves
+    return bandEnergies.map((x) => x / 255); //can do slice(0, -2) to cut last 2 octaves
   };
 }
 

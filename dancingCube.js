@@ -7,9 +7,10 @@ var BASE_SIZE = merlinSlider(0, 20, 5, 0.01);
 var PULSE_SIZE = merlinSlider(0, 20, 5, 0.01);
 var BOX_SOLID = merlinSlider(0, 1, 0, 1);
 var SPIN_OFFSET = merlinSlider(-10, 10, 0, 0.01);
+var BOX_FILL_BRIGHTNESS = merlinSlider(0, 100, 100, 0.1);
 
-var SMOOTHING_COEFF = 0.5;
-var ROLLING_FRAME_COUNT = 1;
+var SMOOTHING_COEFF = 0.7;
+var ROLLING_FRAME_COUNT = 2;
 var SMOOTHING_COEFF = 0.5;
 const HISTORY_BUFFER_SECONDS = 8;
 
@@ -48,7 +49,9 @@ function cube() {
     console.log(normalizedCentroid);
   }
 
-  BOX_SOLID == 1 ? fill(100 * normalizedCentroid, 90, 90) : noFill();
+  BOX_SOLID == 1
+    ? fill(100 * normalizedCentroid, 90, BOX_FILL_BRIGHTNESS)
+    : noFill();
 
   const size = BASE_SIZE + pulseman * PULSE_SIZE;
 
