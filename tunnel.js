@@ -12,6 +12,7 @@ ringEveryDistance = maxTraversal / Ny;
 
 function setup() {
   createCanvas(43, 66, WEBGL);
+  colorMode(HSB, 100);
   noSmooth();
   perspective();
   // Your setup code here
@@ -19,7 +20,7 @@ function setup() {
   z = rotateEachRing;
   rings = Array(Ny)
     .fill(0)
-    .map((_, i) => makeRing(rotateEachRing * i, ringEveryDistance * i));
+    .map((_, i) => makeRing(0, ringEveryDistance * i));
 }
 
 c = 0;
@@ -30,26 +31,34 @@ function draw() {
   for (ring of rings) {
     for (x = Nx; x--; ) {
       push();
-      stroke("white");
+      const h = (ring.count * 10) % 100;
+      stroke(h, 50, 100, 100 * log(ring.traversal / 300));
       strokeWeight(0.5);
-      rotate((2 * PI * x) / Nx + ring.rotation);
-      point(0, 5, ring.traversal - maxTraversal / 3);
+      rotate(-t * 0.3);
+      translate(0, 3 * sin(t), 0);
+      rotate((2 * PI * x) / Nx - t + ((ring.count % 2) * PI) / 4);
+      point(0, 5, ring.traversal - 600);
       pop();
     }
+
     ring.traversal += 2;
     ring.rotation += REVERSE == 1 ? 0.01 : -0.01;
   }
   if (rings[rings.length - 1].traversal > maxTraversal) {
     rings.pop();
-    rings.unshift(makeRing(c * rotateEachRing, 0));
-    c++;
+    rings.unshift(makeRing(0, 0));
   }
+  noStroke();
+  fill("black");
+  //circle(0,0,7)
   t += 0.02;
 }
 
 function makeRing(rotation, traversal) {
+  c++;
   return {
     rotation,
     traversal,
+    count: c,
   };
 }

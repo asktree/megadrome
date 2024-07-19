@@ -14,31 +14,27 @@ let cumToOctave;
 let getEnergies;
 let getRawEnergies;
 let cumUniformizer;
-var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x4a");
+var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0xf"); // k3A
 var HUE_RANGE = merlinSlider(
   -100,
   100,
   0,
   0.001,
-  "Impact LX25+ MIDI1:0xb0:0x4e"
+  "Launch Control XL:0xb0:0x1f" // k3B
 );
-var NOISE_X_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var NOISE_X_MOTION = merlinSlider(-1, 1, 0, 0.001);
-var NOISE_Y_SCALAR = merlinSlider(0, 2, 0.1, 0.001);
-var NOISE_Y_MOTION = merlinSlider(-1, 1, 0, 0.001);
 var NOISE2_SCALAR = merlinSlider(
   0,
   20,
   5,
   0.001,
-  "Impact LX25+ MIDI2:0xbf:0x3f"
+  "Launch Control XL:0xb0:0x11"
 );
-var NOISE2_X_SCALAR = merlinSlider(
+var NOISE2_POS_SCALAR = merlinSlider(
   0,
-  2,
   0.1,
+  0.01,
   0.001,
-  "Impact LX25+ MIDI2:0xbf:0x38"
+  "Launch Control XL:0xb0:0x12"
 );
 var NOISE2_X_MOTION = merlinSlider(
   -1,
@@ -47,13 +43,6 @@ var NOISE2_X_MOTION = merlinSlider(
   0.001,
   "Impact LX25+ MIDI2:0xbf:0x39"
 );
-var NOISE2_Y_SCALAR = merlinSlider(
-  0,
-  2,
-  0.1,
-  0.001,
-  "Impact LX25+ MIDI2:0xbf:0x3d"
-);
 var NOISE2_Y_MOTION = merlinSlider(
   -1,
   1,
@@ -61,26 +50,39 @@ var NOISE2_Y_MOTION = merlinSlider(
   0.001,
   "Impact LX25+ MIDI2:0xbf:0x3c"
 );
+
+var D2_SCALAR = merlinSlider(0, 0.2, 0.1, 0.001, "Launch Control XL:0xb0:0x21");
+var D2_MOTION = merlinSlider(
+  -1.5,
+  1.5,
+  0,
+  0.001,
+  "Launch Control XL:0xb0:0x35"
+);
+
+var D_OFFSET = merlinSlider(0, 20, 0, 0.1, "Launch Control XL:0xb0:0x31");
+var R_OFFSET = merlinSlider(0, 20, 0, 0.1, "Launch Control XL:0xb0:0x32");
 var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
 var ORIGIN_Y = merlinSlider(0, 66, 33, 0.1, "Impact LX25+ MIDI1:0xe0:0x0");
-var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Impact LX25+ MIDI1:0xb0:0x54");
-var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0xa");
+var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Launch Control XL:0xb0:0xd");
+var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Launch Control XL:0xb0:0x1d");
 var ROTATION_SCALAR = merlinSlider(
   0,
-  0.5,
+  0.25,
   0.1,
   0.001,
-  "Impact LX25+ MIDI1:0xb0:0x5"
+  "Launch Control XL:0xb0:0xe"
 );
 var ROTATION_MOTION = merlinSlider(
   -5,
   5,
   0,
   0.01,
-  "Impact LX25+ MIDI1:0xb0:0x4d"
+  "Launch Control XL:0xb0:0x1e"
 );
-var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
-var PULSE_SIZE = merlinSlider(0, 5, 0, 0.001, "Impact LX25+ MIDI1:0xb0:0x47");
+var PULSE_OCTAVE = merlinSlider(0, 11, 2, 1);
+var PULSE_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x34");
+var PULSE2_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x36");
 
 /** used by proportional octave mapping,
  * sets the energy level of a fake octave that is always black.
@@ -90,26 +92,39 @@ var PROPORTION_DEADZONE = merlinSlider(
   25,
   0,
   0.01,
-  "Impact LX25+ MIDI1:0xb0:0x4c"
+  "Launch Control XL:0xb0:0x10"
 );
 /** used by proportional octave mapping,
  * gain on each octave, used only for proportion, not brightness */
-var PROPORTION_GAIN = merlinSlider(-0.9, 0.9, 0, 0.01);
+var PROPORTION_GAIN = merlinSlider(
+  -0.2,
+  0.2,
+  0,
+  0.01,
+  "Launch Control XL:0xb0:0x20"
+);
 
 var SCALE_CURVE = merlinCurve("identity");
 
 var ROLLING_FRAME_COUNT = 1;
-var SMOOTHING_COEFF = 0.5;
+var SMOOTHING_COEFF = merlinSlider(
+  0.01,
+  0.99,
+  0.5,
+  0.01,
+  "Launch Control XL:0xb0:0x4d"
+);
+var RESET_FFT = merlinButton(updateFFT, "Launch Control XL:0x90:0x49");
 
-let noiseXOffset = 0;
-let noiseYOffset = 0;
 let noise2XOffset = 0;
 let noise2YOffset = 0;
 let dOffset = 0;
+let d2Offset = 0;
 let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 8;
 const SHOW_SPECTROGRAPH = false;
+let fft;
 
 function setup() {
   canvas = createCanvas(43, 66).canvas;
@@ -118,7 +133,7 @@ function setup() {
   noise = new OpenSimplexNoise(Date.now());
 
   // OPTIONS
-  const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, zero_pos);
+  const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, pulse_dist_pos_2);
   const pixelToNoise = createSimplex3DMap(
     rotation_pos,
     pulse_dist_pos,
@@ -154,12 +169,11 @@ function draw() {
 
 // update wuz taken
 function upsnarf() {
-  noiseXOffset += NOISE_X_MOTION * NOISE_X_SCALAR;
-  noiseYOffset += NOISE_Y_MOTION * NOISE_Y_SCALAR;
-  noise2XOffset += NOISE2_X_MOTION * NOISE2_X_SCALAR;
-  noise2YOffset += NOISE2_Y_MOTION * NOISE2_Y_SCALAR;
-  dOffset += D_MOTION * D_SCALAR;
-  rotationOffset += ROTATION_MOTION * ROTATION_SCALAR;
+  noise2XOffset -= NOISE2_X_MOTION * NOISE2_POS_SCALAR;
+  noise2YOffset -= NOISE2_Y_MOTION * NOISE2_POS_SCALAR;
+  dOffset -= D_MOTION * D_SCALAR;
+  d2Offset -= D2_MOTION * D2_SCALAR;
+  rotationOffset -= ROTATION_MOTION * ROTATION_SCALAR;
 }
 
 let energyCacheHack = undefined;
@@ -191,6 +205,20 @@ function render() {
 
 // AUDIO UTILS
 // ----------------
+
+function updateFFT() {
+  // Gets a reference to computer's microphone
+  // https://p5js.org/reference/#/p5.AudioIn
+  const mic = new p5.AudioIn();
+  // Start processing audio input
+  // https://p5js.org/reference/#/p5.AudioIn/start
+  mic.start();
+  // used to be 256. why?
+  const numFftBins = 1024; // Defaults to 1024. Must be power of 2.
+  fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
+  fft.setInput(mic);
+}
+
 function createEnergyGetter() {
   // Gets a reference to computer's microphone
   // https://p5js.org/reference/#/p5.AudioIn
@@ -200,7 +228,7 @@ function createEnergyGetter() {
   mic.start();
   // used to be 256. why?
   const numFftBins = 1024; // Defaults to 1024. Must be power of 2.
-  const fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
+  fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
   fft.setInput(mic);
 
   return () => {
@@ -320,16 +348,19 @@ function createSimplexMap(f, g, h, i) {
 
 // PIXEL (x, y) -> NOISE POS
 // ----------------
-const x_pos = (x, y) => x * NOISE_X_SCALAR + noiseXOffset;
-const x2_pos = (x, y) => x * NOISE2_X_SCALAR + noise2XOffset;
-const y_pos = (x, y) => y * NOISE_Y_SCALAR + noiseYOffset;
-const y2_pos = (x, y) => y * NOISE2_Y_SCALAR + noise2YOffset;
+const x2_pos = (x, y) => x * NOISE2_POS_SCALAR + noise2XOffset;
+const y2_pos = (x, y) => y * NOISE2_POS_SCALAR + noise2YOffset;
 const t_pos = (x, y) => frameCount / 60;
 const dist_pos = (x, y) =>
-  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR + dOffset;
+  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR + dOffset - D_OFFSET;
+const dist_pos_2 = (x, y) =>
+  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D2_SCALAR + d2Offset;
 const pulse_dist_pos = (x, y) =>
   dist_pos(x, y) -
   (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE : 0);
+const pulse_dist_pos_2 = (x, y) =>
+  dist_pos_2(x, y) -
+  (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE2_SIZE : 0);
 
 function calculateAngle(x1, y1, x2, y2) {
   // Calculate the angle in radians
@@ -342,7 +373,9 @@ function calculateAngle(x1, y1, x2, y2) {
 }
 
 const rotation_pos = (x, y) =>
-  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR + rotationOffset;
+  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR +
+  rotationOffset -
+  R_OFFSET;
 const zero_pos = (...args) => 0;
 
 // UTILS
