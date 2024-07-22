@@ -31,7 +31,7 @@ var NOISE2_SCALAR = merlinSlider(
 );
 var NOISE2_POS_SCALAR = merlinSlider(
   0,
-  0.1,
+  0.3,
   0.01,
   0.001,
   "Launch Control XL:0xb0:0x12"
@@ -57,10 +57,12 @@ var D2_MOTION = merlinSlider(
   1.5,
   0,
   0.001,
-  "Launch Control XL:0xb0:0x35"
+  "Launch Control XL:0xb0:0x22"
 );
 
-var D_OFFSET = merlinSlider(0, 20, 0, 0.1, "Launch Control XL:0xb0:0x31");
+var D_OFFSET = merlinSlider(0, 10, 0, 0.1, "Launch Control XL:0xb0:0x31");
+var D2_OFFSET = merlinSlider(0, 2, 0, 0.1, "Launch Control XL:0xb0:0x35");
+
 var R_OFFSET = merlinSlider(0, 20, 0, 0.1, "Launch Control XL:0xb0:0x32");
 var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
 var ORIGIN_Y = merlinSlider(0, 66, 33, 0.1, "Impact LX25+ MIDI1:0xe0:0x0");
@@ -81,7 +83,7 @@ var ROTATION_MOTION = merlinSlider(
   "Launch Control XL:0xb0:0x1e"
 );
 var PULSE_OCTAVE = merlinSlider(0, 11, 2, 1);
-var PULSE_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x34");
+var PULSE_SIZE = merlinSlider(0, 4, 0, 0.001, "Launch Control XL:0xb0:0x34");
 var PULSE2_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x36");
 
 /** used by proportional octave mapping,
@@ -116,13 +118,24 @@ var SMOOTHING_COEFF = merlinSlider(
 );
 var RESET_FFT = merlinButton(updateFFT, "Launch Control XL:0x90:0x49");
 
+function invert() {
+  invertColor = !invertColor;
+  setTimeout(() => {
+    invertColor = !invertColor;
+  }, 100);
+}
+var INVERTO = merlinButton(invert, "Launch Control XL:0x90:0x4c");
+var INVERTO2 = merlinButton(invert, "Launch Control XL:0x90:0x4b");
+
+let invertColor = false;
+
 let noise2XOffset = 0;
 let noise2YOffset = 0;
 let dOffset = 0;
 let d2Offset = 0;
 let rotationOffset = 0;
 
-const HISTORY_BUFFER_SECONDS = 8;
+const HISTORY_BUFFER_SECONDS = 3;
 const SHOW_SPECTROGRAPH = false;
 let fft;
 
@@ -173,7 +186,7 @@ function upsnarf() {
   noise2YOffset -= NOISE2_Y_MOTION * NOISE2_POS_SCALAR;
   dOffset -= D_MOTION * D_SCALAR;
   d2Offset -= D2_MOTION * D2_SCALAR;
-  rotationOffset -= ROTATION_MOTION * ROTATION_SCALAR;
+  rotationOffset += ROTATION_MOTION * ROTATION_SCALAR;
 }
 
 let energyCacheHack = undefined;
@@ -332,7 +345,8 @@ const proportionalCumOctaveMap = () => (cum, energies) => {
 };
 
 // CUM [0, 1] -> HUE
-const cumHueMap = (cum) => (500 + HUE_OFFSET + cum * HUE_RANGE) % 100;
+const cumHueMap = (cum) =>
+  (500 + HUE_OFFSET + cum * HUE_RANGE + (invertColor ? 50 : 0)) % 100;
 
 // PIXEL (x, y) -> CUM [0, 1]
 // ----------------
@@ -352,9 +366,12 @@ const x2_pos = (x, y) => x * NOISE2_POS_SCALAR + noise2XOffset;
 const y2_pos = (x, y) => y * NOISE2_POS_SCALAR + noise2YOffset;
 const t_pos = (x, y) => frameCount / 60;
 const dist_pos = (x, y) =>
-  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR + dOffset - D_OFFSET;
+  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR +
+  dOffset -
+  D_OFFSET -
+  (invertColor ? 0.4 : 0);
 const dist_pos_2 = (x, y) =>
-  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D2_SCALAR + d2Offset;
+  Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D2_SCALAR + d2Offset - D2_OFFSET;
 const pulse_dist_pos = (x, y) =>
   dist_pos(x, y) -
   (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE : 0);
@@ -371,11 +388,11 @@ function calculateAngle(x1, y1, x2, y2) {
 
   return angleDegrees;
 }
-
 const rotation_pos = (x, y) =>
   calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR +
-  rotationOffset -
+  rotationOffset +
   R_OFFSET;
+
 const zero_pos = (...args) => 0;
 
 // UTILS

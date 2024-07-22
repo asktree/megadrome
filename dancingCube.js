@@ -1,17 +1,26 @@
 /** its a dancing cube
  * emmy jul 1 24
  */
-
-var PULSE_OCTAVE = merlinSlider(0, 11, 0, 1);
-var BASE_SIZE = merlinSlider(0, 20, 5, 0.01);
-var PULSE_SIZE = merlinSlider(0, 20, 5, 0.01);
+var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0x13"); // k3A
+var HUE_RANGE = merlinSlider(
+  -100,
+  100,
+  0,
+  0.001,
+  "Launch Control XL:0xb0:0x23" // k3B
+);
+var PULSE_OCTAVE = merlinSlider(0, 11, 2, 1);
+var BASE_SIZE = merlinSlider(0, 20, 5, 0.01, "Launch Control XL:0xb0:0x37");
+var PULSE_SIZE = merlinSlider(0, 20, 5, 0.01, "Launch Control XL:0xb0:0x38");
 var BOX_SOLID = merlinSlider(0, 1, 0, 1);
-var SPIN_OFFSET = merlinSlider(-10, 10, 0, 0.01);
+var SPINX_OFFSET = merlinSlider(-4, 4, 0, 0.01, "Launch Control XL:0xb0:0x53");
+var SPINY_OFFSET = merlinSlider(-4, 4, 0, 0.01, "Launch Control XL:0xb0:0x54");
 var BOX_FILL_BRIGHTNESS = merlinSlider(0, 100, 100, 0.1);
+var X_OFFSET = merlinSlider(-30, 30, 0, 0.01, "Launch Control XL:0xb0:0x23");
+var Y_OFFSET = merlinSlider(-40, 40, 0, 0.01, "Launch Control XL:0xb0:0x24");
 
-var SMOOTHING_COEFF = 0.7;
-var ROLLING_FRAME_COUNT = 2;
 var SMOOTHING_COEFF = 0.5;
+var ROLLING_FRAME_COUNT = 2;
 const HISTORY_BUFFER_SECONDS = 8;
 
 let getEnergies;
@@ -50,14 +59,19 @@ function cube() {
   }
 
   BOX_SOLID == 1
-    ? fill(100 * normalizedCentroid, 90, BOX_FILL_BRIGHTNESS)
+    ? fill(
+        (100 * normalizedCentroid + HUE_OFFSET) % 100,
+        90,
+        BOX_FILL_BRIGHTNESS
+      )
     : noFill();
 
   const size = BASE_SIZE + pulseman * PULSE_SIZE;
 
   stroke(100);
-  rotateX(frameCount * 0.01 + SPIN_OFFSET);
-  rotateY(frameCount * 0.01);
+  translate(X_OFFSET, Y_OFFSET, 0);
+  rotateX(frameCount * 0.01 + SPINX_OFFSET);
+  rotateY(frameCount * 0.01 + SPINY_OFFSET);
   box(size);
 }
 
