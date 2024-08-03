@@ -110,10 +110,10 @@ var SCALE_CURVE = merlinCurve("identity");
 
 var ROLLING_FRAME_COUNT = 1;
 var SMOOTHING_COEFF = merlinSlider(
-  0.01,
+  0.0,
   0.99,
   0.5,
-  0.01,
+  0.001,
   "Launch Control XL:0xb0:0x4d"
 );
 var RESET_FFT = merlinButton(updateFFT, "Launch Control XL:0x90:0x49");
@@ -136,7 +136,7 @@ let d2Offset = 0;
 let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 3;
-const SHOW_SPECTROGRAPH = false;
+var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
 let fft;
 
 function setup() {
@@ -213,7 +213,7 @@ function render() {
       rect(x, y, 10, 10);
     }
   }
-  SHOW_SPECTROGRAPH && drawSpectrograph(energies, rawEnergies);
+  if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
 }
 
 // AUDIO UTILS
@@ -428,8 +428,9 @@ function drawSpectrograph(energies, rawEnergies) {
   push();
   translate(0, height);
   scale(1, -1);
+  // Draw black outline box
   rawEnergies.forEach((energy, i) => {
-    fill(cumHueMap((i + 1) / energies.length), 0, 0);
+    fill(0, 0, 0);
     rect(
       0,
       height - rectWidth * (i + 1),
@@ -437,6 +438,7 @@ function drawSpectrograph(energies, rawEnergies) {
       rectWidth + 1
     );
   });
+  // Draw colored bar for display energy
   energies.forEach((energy, i) => {
     noStroke();
     fill(cumHueMap((i + 1) / energies.length), 100, 50);
@@ -447,15 +449,24 @@ function drawSpectrograph(energies, rawEnergies) {
       rectWidth - 1
     );
   });
+  // Draw raw energy white bar
   rawEnergies.forEach((energy, i) => {
     noStroke();
-    fill(cumHueMap((i + 1) / energies.length), 0, 70);
+    fill(0, 0, 70);
     rect(
       spectrographHeight * energy + 2,
       height + 1 - rectWidth * (i + 1),
       1,
       rectWidth - 1
     );
+  });
+  // Draw peak indicators -- a white bar at the bottom
+  rawEnergies.forEach((energy, i) => {
+    if (energy > 0.99) {
+      noStroke();
+      fill(0, 0, 70);
+      rect(0, height + 1 - rectWidth * (i + 1), 3, rectWidth - 1);
+    }
   });
   pop();
 }
