@@ -57,19 +57,17 @@ function cube() {
   if (Math.random() < 0.01) {
     console.log(normalizedCentroid);
   }
+  const hue = (100 * normalizedCentroid + HUE_OFFSET) % 100;
 
-  BOX_SOLID == 1
-    ? fill(
-        (100 * normalizedCentroid + HUE_OFFSET) % 100,
-        90,
-        BOX_FILL_BRIGHTNESS
-      )
-    : noFill();
+  BOX_SOLID == 1 ? fill(hue, 90, BOX_FILL_BRIGHTNESS) : noFill();
 
   const size = BASE_SIZE + pulseman * PULSE_SIZE;
 
-  stroke(100);
-  translate(X_OFFSET, Y_OFFSET, 0);
+  stroke((50 + hue) % 100, 100, 90);
+  strokeWeight(0.2 * (BASE_SIZE + pulseman * PULSE_SIZE));
+  //strokeWeight(4*pulseman**2)
+
+  translate(X_OFFSET, Y_OFFSET, pulseman * 20);
   rotateX(frameCount * 0.01 + SPINX_OFFSET);
   rotateY(frameCount * 0.01 + SPINY_OFFSET);
   box(size);
