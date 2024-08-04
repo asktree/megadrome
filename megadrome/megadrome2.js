@@ -147,25 +147,25 @@ function setup() {
 
   // OPTIONS
   const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, pulse_dist_pos_2);
-  const pixelToNoise = createSimplex3DMap(
-    rotation_pos,
+  const pixelToNoise = createSimplexMap(
+    sin_pos,
     pulse_dist_pos,
-    (x, y) => simplexMap1(x, y) * NOISE2_SCALAR
+    cos_pos,
+    simplexMap1
   );
 
   [pixelToCum, cumUniformizer] = createUniformizedMap(pixelToNoise, () => [
     Math.random() * 100,
     Math.random() * 100,
     Math.random() * 1000,
+    Math.random() * 1000,
   ]);
 
   // OPTIONS:
   // * createEnergyGetter()
   // * createAudioNormalizer(createEnergyGetter());
-  getRawEnergies = createAudioSmoother(createEnergyGetter());
-  getEnergies = createAudioSmoother(
-    createAudioNormalizer(createEnergyGetter())
-  );
+  getRawEnergies = createEnergyGetter();
+  getEnergies = createEnergyGetter();
 
   // OPTIONS:
   // * uniformCumOctaveMap -- each octave gets equal # of pixels
@@ -194,9 +194,7 @@ let energyCacheHack = undefined;
 function render() {
   const normalizedSmoothedEnergies = getEnergies();
   const rawEnergies = getRawEnergies();
-  const energies = rawEnergies.map((x, i) => {
-    return x * normalizedSmoothedEnergies[i];
-  });
+  const energies = rawEnergies;
   energyCacheHack = energies;
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
@@ -383,16 +381,16 @@ function calculateAngle(x1, y1, x2, y2) {
   // Calculate the angle in radians
   const angleRadians = Math.atan2(y2 - y1, x2 - x1);
 
-  // Convert radians to degrees
-  const angleDegrees = angleRadians * (180 / Math.PI);
-
-  return angleDegrees;
+  return angleRadians;
 }
 const rotation_pos = (x, y) =>
-  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR +
+  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) + rotationOffset + R_OFFSET;
+/*  calculateAngle(ORIGIN_X, ORIGIN_Y, x, y) * ROTATION_SCALAR +
   rotationOffset +
-  R_OFFSET;
+  R_OFFSET; */
 
+const sin_pos = (...args) => Math.sin(rotation_pos(...args)) * ROTATION_SCALAR;
+const cos_pos = (...args) => Math.cos(rotation_pos(...args)) * ROTATION_SCALAR;
 const zero_pos = (...args) => 0;
 
 // UTILS
