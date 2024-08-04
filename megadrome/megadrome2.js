@@ -12,7 +12,6 @@ let canvas;
 let pixelToCum;
 let cumToOctave;
 let getEnergies;
-let getRawEnergies;
 let cumUniformizer;
 var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0xf"); // k3A
 var HUE_RANGE = merlinSlider(
@@ -164,7 +163,6 @@ function setup() {
   // OPTIONS:
   // * createEnergyGetter()
   // * createAudioNormalizer(createEnergyGetter());
-  getRawEnergies = createEnergyGetter();
   getEnergies = createEnergyGetter();
 
   // OPTIONS:
@@ -192,9 +190,7 @@ function upsnarf() {
 let energyCacheHack = undefined;
 
 function render() {
-  const normalizedSmoothedEnergies = getEnergies();
-  const rawEnergies = getRawEnergies();
-  const energies = rawEnergies;
+  const energies = getEnergies();
   energyCacheHack = energies;
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
@@ -211,7 +207,7 @@ function render() {
       rect(x, y, 10, 10);
     }
   }
-  if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
+  if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies);
 }
 
 // AUDIO UTILS
@@ -252,53 +248,6 @@ function createEnergyGetter() {
 
 function average(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
-
-function createAudioSmoother(getEnergies) {
-  let historicalEnergies = [];
-  return () => {
-    const newNormalizedAudio = [...getEnergies()];
-    historicalEnergies.unshift(newNormalizedAudio);
-    while (historicalEnergies.length > ROLLING_FRAME_COUNT) {
-      historicalEnergies.pop();
-    }
-    const smoothedEnergies = newNormalizedAudio.map((e, i) => {
-      const historyOfEnergy = historicalEnergies.map((energies) => energies[i]);
-      return average(historyOfEnergy);
-    });
-    return smoothedEnergies;
-  };
-}
-
-function createAudioNormalizer(getEnergies) {
-  // array of energies over time
-  let historicalEnergies = [];
-  return () => {
-    const uneditedEnergies = getEnergies();
-    const historyLength = HISTORY_BUFFER_SECONDS * 60;
-
-    // fft a few moments to kick in and not just spit out zeros
-    // and we dont want to pollute history with that
-    if (uneditedEnergies[0] === 0) return uneditedEnergies;
-
-    // push audio data from current frame into historical data
-    // trim historical data if needed to be specified length (e.g. X frames of history)
-    // emmy left this mutative for the sake of optimization
-    historicalEnergies.unshift(uneditedEnergies);
-    while (historicalEnergies.length > historyLength) {
-      historicalEnergies.pop();
-    }
-
-    const normalizedEnergies = uneditedEnergies.map((e, i) => {
-      const historyOfEnergy = historicalEnergies.map((energies) => energies[i]);
-      const highestLevel = Math.max(...historyOfEnergy);
-      const lowestLevel = Math.min(...historyOfEnergy);
-      if (highestLevel === 0) return 0;
-      return map(e, lowestLevel, highestLevel, 0, 1);
-    });
-
-    return normalizedEnergies;
-  };
 }
 
 // CUM [0, 1] -> ENERGY [0, 1]
@@ -419,7 +368,7 @@ function createUniformizedMap(f, mockInput, samples = 1000) {
   return [(...args) => uniformizer(f(...args)), uniformizer];
 }
 
-function drawSpectrograph(energies, rawEnergies) {
+function drawSpectrograph(energies) {
   //const rectWidth = Math.round(height / energies.length / 2);
   const rectWidth = 3;
   const spectrographHeight = 20;
@@ -427,7 +376,7 @@ function drawSpectrograph(energies, rawEnergies) {
   translate(0, height);
   scale(1, -1);
   // Draw black outline box
-  rawEnergies.forEach((energy, i) => {
+  energies.forEach((energy, i) => {
     fill(0, 0, 0);
     rect(
       0,
@@ -448,7 +397,7 @@ function drawSpectrograph(energies, rawEnergies) {
     );
   });
   // Draw raw energy white bar
-  rawEnergies.forEach((energy, i) => {
+  energies.forEach((energy, i) => {
     noStroke();
     fill(0, 0, 70);
     rect(
@@ -459,7 +408,7 @@ function drawSpectrograph(energies, rawEnergies) {
     );
   });
   // Draw peak indicators -- a white bar at the bottom
-  rawEnergies.forEach((energy, i) => {
+  energies.forEach((energy, i) => {
     if (energy > 0.99) {
       noStroke();
       fill(0, 0, 70);
