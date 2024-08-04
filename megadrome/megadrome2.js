@@ -7,8 +7,8 @@ let canvas;
 
 // the basic way things work is:
 // each PIXEL (at time t) gets mapped to a CUM (aka a frequency)
-// each CUM has a static mapping to a hue and an octave
-// each octave maps to an ENERGY value based on audio input
+// each CUM has a static mapping to an octave
+// each octave maps to a HUE, and BRIGHTNESS based on its energy level
 let pixelToCum;
 let cumToOctave;
 let getEnergies;
@@ -197,7 +197,7 @@ function render() {
       let cum = pixelToCum(x, y);
       let octave = cumToOctave(cum, energies);
       let energy = energies[octave] ?? 0;
-      let hue = cumHueMap((octave + 1) / energies.length);
+      let hue = octaveHueMap((octave + 1) / energies.length);
       //if (isNaN(energy)) { console.log("REEEE")}
       let brightness = SCALE_CURVE(energy || 0) * 100;
       const color = [hue, 80, brightness];
@@ -292,7 +292,7 @@ const proportionalCumOctaveMap = () => (cum, energies) => {
 };
 
 // CUM [0, 1] -> HUE
-const cumHueMap = (cum) =>
+const octaveHueMap = (cum) =>
   (500 + HUE_OFFSET + cum * HUE_RANGE + (invertColor ? 50 : 0)) % 100;
 
 // PIXEL (x, y) -> CUM [0, 1]
@@ -388,7 +388,7 @@ function drawSpectrograph(energies) {
   // Draw colored bar for display energy
   energies.forEach((energy, i) => {
     noStroke();
-    fill(cumHueMap((i + 1) / energies.length), 100, 50);
+    fill(octaveHueMap((i + 1) / energies.length), 100, 50);
     rect(
       0,
       height + 1 - rectWidth * (i + 1),
