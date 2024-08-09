@@ -69,14 +69,14 @@ var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Launch Control XL:0xb0:0xd");
 var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Launch Control XL:0xb0:0x1d");
 var ROTATION_SCALAR = merlinSlider(
   0,
-  0.25,
-  0.1,
+  2.5,
+  0.4,
   0.001,
   "Launch Control XL:0xb0:0xe"
 );
 var ROTATION_MOTION = merlinSlider(
-  -5,
-  5,
+  -0.05,
+  0.05,
   0,
   0.01,
   "Launch Control XL:0xb0:0x1e"
@@ -150,7 +150,7 @@ function setup() {
     sin_pos,
     pulse_dist_pos,
     cos_pos,
-    simplexMap1
+    (x, y) => simplexMap1(x, y) * NOISE2_SCALAR
   );
 
   [pixelToCum, cumUniformizer] = createUniformizedMap(pixelToNoise, () => [
@@ -190,7 +190,8 @@ function upsnarf() {
 let energyCacheHack = undefined;
 
 function render() {
-  const energies = getEnergies();
+  const rawEnergies = getEnergies();
+  const energies = rawEnergies;
   energyCacheHack = energies;
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
@@ -207,7 +208,7 @@ function render() {
       rect(x, y, 10, 10);
     }
   }
-  if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies);
+  if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
 }
 
 // AUDIO UTILS
@@ -234,14 +235,16 @@ function createEnergyGetter() {
   // https://p5js.org/reference/#/p5.AudioIn/start
   mic.start();
   // used to be 256. why?
-  const numFftBins = 1024; // Defaults to 1024. Must be power of 2.
+  const numFftBins = 2 ** 9; // Defaults to 1024. Must be power of 2.
   fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
   fft.setInput(mic);
 
   return () => {
-    fft.analyze();
-    const bands = fft.getOctaveBands(1);
-    const bandEnergies = fft.logAverages(bands);
+    const spectrum = fft.analyze();
+    // const bands = fft.getOctaveBands(1);
+    // const bandEnergies = fixedLogAverages(fft, bands);
+    const bandEnergies = splitOctaves(spectrum, 10);
+
     return bandEnergies.map((x) => x / 255); //can do slice(0, -2) to cut last 2 octaves
   };
 }
@@ -250,6 +253,80 @@ function average(arr) {
   return arr.reduce((a, b) => a + b, 0) / arr.length;
 }
 
+function splitOctaves(spectrum, slicesPerOctave) {
+  var scaledSpectrum = [];
+  var len = spectrum.length;
+
+  // default to thirds
+  var n = slicesPerOctave || 3;
+  var nthRootOfTwo = Math.pow(2, 1 / n);
+
+  // the last N bins get their own
+  var lowestBin = slicesPerOctave;
+
+  var binIndex = len - 1;
+  var i = binIndex;
+
+  while (i > lowestBin) {
+    var nextBinIndex = round(binIndex / nthRootOfTwo);
+
+    if (nextBinIndex === 1) return;
+
+    var total = 1;
+    var numBins = 0;
+
+    // add up all of the values for the frequencies
+    for (i = binIndex; i > nextBinIndex; i--) {
+      // total += spectrum[i];
+      total *= spectrum[i];
+      numBins++;
+    }
+
+    // divide total sum by number of bins
+    //var energy = total/numBins;
+    var energy = Math.pow(total, 1 / numBins);
+    scaledSpectrum.push(energy);
+
+    // keep the loop going
+    binIndex = nextBinIndex;
+  }
+
+  // add the lowest bins at the end
+  for (var j = i; j > 0; j--) {
+    scaledSpectrum.push(spectrum[j]);
+  }
+
+  // reverse so that array has same order as original array (low to high frequencies)
+  scaledSpectrum.reverse();
+
+  return scaledSpectrum;
+}
+/* 
+function fixedLogAverages(fft, octaveBands) {
+  var audiocontext = getAudioContext();
+  var nyquist = audiocontext.sampleRate / 2;
+  var spectrum = fft.freqDomain;
+  var spectrumLength = spectrum.length;
+  var logAverages = new Array(octaveBands.length);
+  var octaveIndex = 0;
+  for (var specIndex = 0; specIndex < spectrumLength; specIndex++) {
+    var specIndexFrequency = Math.round(
+      (specIndex * nyquist) / fft.freqDomain.length
+    );
+
+    if (specIndexFrequency > octaveBands[octaveIndex].hi) {
+      octaveIndex++;
+    }
+
+    logAverages[octaveIndex] =
+      logAverages[octaveIndex] !== undefined
+        ? logAverages[octaveIndex] + spectrum[specIndex]
+        : spectrum[specIndex];
+  }
+
+  return logAverages.map((x, i) => x);
+}
+ */
 // CUM [0, 1] -> ENERGY [0, 1]
 // ----------------
 /** this function creates a shitty mock audio input */
@@ -368,7 +445,7 @@ function createUniformizedMap(f, mockInput, samples = 1000) {
   return [(...args) => uniformizer(f(...args)), uniformizer];
 }
 
-function drawSpectrograph(energies) {
+function drawSpectrograph(energies, rawEnergies) {
   //const rectWidth = Math.round(height / energies.length / 2);
   const rectWidth = 3;
   const spectrographHeight = 20;
@@ -376,7 +453,7 @@ function drawSpectrograph(energies) {
   translate(0, height);
   scale(1, -1);
   // Draw black outline box
-  energies.forEach((energy, i) => {
+  rawEnergies.forEach((energy, i) => {
     fill(0, 0, 0);
     rect(
       0,
@@ -397,7 +474,7 @@ function drawSpectrograph(energies) {
     );
   });
   // Draw raw energy white bar
-  energies.forEach((energy, i) => {
+  rawEnergies.forEach((energy, i) => {
     noStroke();
     fill(0, 0, 70);
     rect(
@@ -408,7 +485,7 @@ function drawSpectrograph(energies) {
     );
   });
   // Draw peak indicators -- a white bar at the bottom
-  energies.forEach((energy, i) => {
+  rawEnergies.forEach((energy, i) => {
     if (energy > 0.99) {
       noStroke();
       fill(0, 0, 70);
