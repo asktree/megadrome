@@ -137,6 +137,7 @@ let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 3;
 const NUM_FFT_BINS = 2 ** 9;
+const NUM_OCTAVE_BINS = 10;
 var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
 let fft;
 
@@ -247,7 +248,7 @@ function createEnergyGetter() {
     const spectrum = fft.analyze();
     // const bands = fft.getOctaveBands(1);
     // const bandEnergies = fixedLogAverages(fft, bands);
-    const bandEnergies = splitOctaves(spectrum, 10);
+    const bandEnergies = splitOctaves(spectrum, NUM_OCTAVE_BINS);
 
     return bandEnergies.map((x) => x / 255); //can do slice(0, -2) to cut last 2 octaves
   };
