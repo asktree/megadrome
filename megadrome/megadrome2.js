@@ -165,7 +165,7 @@ function setup() {
   // * createEnergyGetter()
   // * createAudioNormalizer(createEnergyGetter());
   getRawEnergies = createEnergyGetter();
-  getEnergies = createEnergyGetter();
+  getEnergies = createAudioNormalizer(createEnergyGetter());
 
   // OPTIONS:
   // * uniformCumOctaveMap -- each octave gets equal # of pixels
@@ -194,7 +194,9 @@ let energyCacheHack = undefined;
 function render() {
   const normalizedSmoothedEnergies = getEnergies();
   const rawEnergies = getRawEnergies();
-  const energies = rawEnergies;
+  const energies = rawEnergies.map((x, i) => {
+    return x * normalizedSmoothedEnergies[i];
+  });
   energyCacheHack = energies;
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
