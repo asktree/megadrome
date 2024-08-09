@@ -136,6 +136,7 @@ let d2Offset = 0;
 let rotationOffset = 0;
 
 const HISTORY_BUFFER_SECONDS = 3;
+const NUM_FFT_BINS = 2 ** 9;
 var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
 let fft;
 
@@ -227,8 +228,7 @@ function updateFFT() {
   // https://p5js.org/reference/#/p5.AudioIn/start
   mic.start();
   // used to be 256. why?
-  const numFftBins = 1024; // Defaults to 1024. Must be power of 2.
-  fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
+  fft = new p5.FFT(SMOOTHING_COEFF, NUM_FFT_BINS);
   fft.setInput(mic);
 }
 
@@ -240,8 +240,7 @@ function createEnergyGetter() {
   // https://p5js.org/reference/#/p5.AudioIn/start
   mic.start();
   // used to be 256. why?
-  const numFftBins = 2 ** 9; // Defaults to 1024. Must be power of 2.
-  fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
+  fft = new p5.FFT(SMOOTHING_COEFF, NUM_FFT_BINS);
   fft.setInput(mic);
 
   return () => {
