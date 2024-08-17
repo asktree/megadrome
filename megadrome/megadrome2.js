@@ -73,7 +73,7 @@ var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Launch Control XL:0xb0:0xd");
 var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Launch Control XL:0xb0:0x1d");
 var ROTATION_SCALAR = merlinSlider(
   0,
-  0.5,
+  0.25,
   0,
   0.001,
   "Launch Control XL:0xb0:0xe"
@@ -113,6 +113,13 @@ var GLOBAL_ROTATION = merlinSlider(
   0.1,
   0,
   0.0001,
+  "Launch Control XL:0xb0:0x1e"
+);
+var GLOBAL_MOTION_SCALAR = merlinSlider(
+  -4,
+  4,
+  0,
+  0.001,
   "Launch Control XL:0xb0:0x33"
 );
 //var SCALE_CURVE = merlinCurve("identity");
@@ -197,12 +204,12 @@ function draw() {
 
 // update wuz taken
 function upsnarf() {
-  noise2XOffset -= NOISE2_X_MOTION * NOISE2_POS_SCALAR;
-  noise2YOffset -= NOISE2_Y_MOTION * NOISE2_POS_SCALAR;
-  dOffset -= D_MOTION * D_SCALAR;
-  d2Offset -= D2_MOTION * D2_SCALAR;
-  rotationOffset += ROTATION_MOTION * ROTATION_SCALAR;
-  globalRotationOffset += GLOBAL_ROTATION;
+  noise2XOffset -= NOISE2_X_MOTION * NOISE2_POS_SCALAR * GLOBAL_MOTION_SCALAR;
+  noise2YOffset -= NOISE2_Y_MOTION * NOISE2_POS_SCALAR * GLOBAL_MOTION_SCALAR;
+  dOffset -= D_MOTION * D_SCALAR * GLOBAL_MOTION_SCALAR * GLOBAL_MOTION_SCALAR;
+  d2Offset -= D2_MOTION * D2_SCALAR * GLOBAL_MOTION_SCALAR;
+  rotationOffset += ROTATION_MOTION * ROTATION_SCALAR * GLOBAL_MOTION_SCALAR;
+  globalRotationOffset += GLOBAL_ROTATION * GLOBAL_MOTION_SCALAR;
 }
 
 let energyCacheHack = undefined;
@@ -538,7 +545,7 @@ const cos_pos = (...args) => Math.cos(rotation_pos(...args)) * ROTATION_SCALAR;
 const zero_pos = (...args) => 0;
 
 const globo_rotato = (f) => (x, y) => {
-  const angle = globalRotationOffset;
+  const angle = globalRotationOffset + R_OFFSET;
   const s = Math.sin(angle);
   const c = Math.cos(angle);
   const newX = (x - ORIGIN_X) * c - (y - ORIGIN_Y) * s + ORIGIN_X;
