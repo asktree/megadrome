@@ -73,8 +73,8 @@ var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Launch Control XL:0xb0:0xd");
 var D_MOTION = merlinSlider(-1.5, 1.5, 0, 0.001, "Launch Control XL:0xb0:0x1d");
 var ROTATION_SCALAR = merlinSlider(
   0,
-  2.5,
-  0.4,
+  0.5,
+  0,
   0.001,
   "Launch Control XL:0xb0:0xe"
 );
@@ -163,9 +163,9 @@ function setup() {
     pulse_dist_pos_2
   );
   const pixelToNoise = createSimplexMap(
-    globo_rotato(sin_pos),
+    globo_rotato(x_pos),
     pulse_dist_pos,
-    globo_rotato(cos_pos),
+    globo_rotato(y_pos),
     (x, y) => simplexMap1(x, y) * NOISE2_SCALAR
   );
 
@@ -501,8 +501,11 @@ function createSimplexMap(f, g, h, i) {
 
 // PIXEL (x, y) -> NOISE POS
 // ----------------
-const x2_pos = (x, y) => x * NOISE2_POS_SCALAR + noise2XOffset;
-const y2_pos = (x, y) => y * NOISE2_POS_SCALAR + noise2YOffset;
+const x2_pos = (x, y) => (x - ORIGIN_X) * NOISE2_POS_SCALAR + noise2XOffset;
+const y2_pos = (x, y) => (y - ORIGIN_Y) * NOISE2_POS_SCALAR + noise2YOffset;
+const x_pos = (x, y) => (x - ORIGIN_X) * ROTATION_SCALAR;
+const y_pos = (x, y) => (y - ORIGIN_Y) * ROTATION_SCALAR;
+
 const t_pos = (x, y) => frameCount / 60;
 const dist_pos = (x, y) =>
   Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D_SCALAR +
