@@ -5,6 +5,9 @@ let noise;
 // the canvas variable is needed for the capturer
 let canvas;
 
+const HISTORY_BUFFER_SECONDS = 3;
+const NUM_FFT_BINS = 2 ** 9;
+
 // the basic way things work is:
 // each PIXEL (at time t) gets mapped to a CUM (aka a frequency)
 // each CUM has a static mapping to an octave
@@ -31,7 +34,7 @@ var NOISE2_SCALAR = merlinSlider(
 );
 var NOISE2_POS_SCALAR = merlinSlider(
   0,
-  0.3,
+  0.1,
   0.01,
   0.001,
   "Launch Control XL:0xb0:0x12"
@@ -82,7 +85,7 @@ var ROTATION_MOTION = merlinSlider(
   0.01,
   "Launch Control XL:0xb0:0x1e"
 );
-var PULSE_OCTAVE = merlinSlider(0, 11, 2, 1);
+var PULSE_OCTAVE = merlinSlider(0, 30, 6, 1);
 var PULSE_SIZE = merlinSlider(0, 4, 0, 0.001, "Launch Control XL:0xb0:0x34");
 var PULSE2_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x36");
 
@@ -99,14 +102,20 @@ var PROPORTION_DEADZONE = merlinSlider(
 /** used by proportional octave mapping,
  * gain on each octave, used only for proportion, not brightness */
 var PROPORTION_GAIN = merlinSlider(
-  -0.2,
-  0.2,
+  -0.6,
+  0.6,
   0,
   0.01,
   "Launch Control XL:0xb0:0x20"
 );
-
-var SCALE_CURVE = merlinCurve("identity");
+var GLOBAL_ROTATION = merlinSlider(
+  -0.1,
+  0.1,
+  0,
+  0.0001,
+  "Launch Control XL:0xb0:0x33"
+);
+//var SCALE_CURVE = merlinCurve("identity");
 
 var ROLLING_FRAME_COUNT = 1;
 var SMOOTHING_COEFF = merlinSlider(
@@ -116,6 +125,8 @@ var SMOOTHING_COEFF = merlinSlider(
   0.001,
   "Launch Control XL:0xb0:0x4d"
 );
+var NUM_OCTAVE_BINS = merlinSlider(2, 30, 10, 1, "Launch Control XL:0xb0:0x4f");
+
 var RESET_FFT = merlinButton(updateFFT, "Launch Control XL:0x90:0x49");
 
 function invert() {
@@ -134,10 +145,8 @@ let noise2YOffset = 0;
 let dOffset = 0;
 let d2Offset = 0;
 let rotationOffset = 0;
+let globalRotationOffset = 0;
 
-const HISTORY_BUFFER_SECONDS = 3;
-const NUM_FFT_BINS = 2 ** 9;
-const NUM_OCTAVE_BINS = 10;
 var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
 let fft;
 
@@ -148,11 +157,15 @@ function setup() {
   noise = new OpenSimplexNoise(Date.now());
 
   // OPTIONS
-  const simplexMap1 = createSimplex3DMap(x2_pos, y2_pos, pulse_dist_pos_2);
+  const simplexMap1 = createSimplex3DMap(
+    globo_rotato(x2_pos),
+    globo_rotato(y2_pos),
+    pulse_dist_pos_2
+  );
   const pixelToNoise = createSimplexMap(
-    sin_pos,
+    globo_rotato(sin_pos),
     pulse_dist_pos,
-    cos_pos,
+    globo_rotato(cos_pos),
     (x, y) => simplexMap1(x, y) * NOISE2_SCALAR
   );
 
@@ -189,6 +202,7 @@ function upsnarf() {
   dOffset -= D_MOTION * D_SCALAR;
   d2Offset -= D2_MOTION * D2_SCALAR;
   rotationOffset += ROTATION_MOTION * ROTATION_SCALAR;
+  globalRotationOffset += GLOBAL_ROTATION;
 }
 
 let energyCacheHack = undefined;
@@ -200,6 +214,7 @@ function render() {
     return x * normalizedSmoothedEnergies[i];
   });
   energyCacheHack = energies;
+  push();
   for (let x = 0; x < width; x++) {
     for (let y = 0; y < height; y++) {
       let cum = pixelToCum(x, y);
@@ -207,7 +222,7 @@ function render() {
       let energy = energies[octave] ?? 0;
       let hue = octaveHueMap((octave + 1) / energies.length);
       //if (isNaN(energy)) { console.log("REEEE")}
-      let brightness = SCALE_CURVE(energy || 0) * 100;
+      let brightness = energy * 100; //SCALE_CURVE(energy || 0) * 100;
       const color = [hue, 80, brightness];
 
       noStroke();
@@ -215,6 +230,7 @@ function render() {
       rect(x, y, 10, 10);
     }
   }
+  pop();
   if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
 }
 
@@ -517,6 +533,15 @@ const rotation_pos = (x, y) =>
 const sin_pos = (...args) => Math.sin(rotation_pos(...args)) * ROTATION_SCALAR;
 const cos_pos = (...args) => Math.cos(rotation_pos(...args)) * ROTATION_SCALAR;
 const zero_pos = (...args) => 0;
+
+const globo_rotato = (f) => (x, y) => {
+  const angle = globalRotationOffset;
+  const s = Math.sin(angle);
+  const c = Math.cos(angle);
+  const newX = (x - ORIGIN_X) * c - (y - ORIGIN_Y) * s + ORIGIN_X;
+  const newY = (x - ORIGIN_X) * s + (y - ORIGIN_Y) * c + ORIGIN_Y;
+  return f(newX, newY);
+};
 
 // UTILS
 // ----------------
