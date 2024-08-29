@@ -85,7 +85,7 @@ var ROTATION_MOTION = merlinSlider(
   0.01,
   "Launch Control XL:0xb0:0x1e"
 );
-var PULSE_OCTAVE = merlinSlider(0, 30, 6, 1);
+var PULSE_OCTAVE = merlinSlider(0, 30, 2, 1);
 var PULSE_SIZE = merlinSlider(0, 4, 0, 0.001, "Launch Control XL:0xb0:0x34");
 var PULSE2_SIZE = merlinSlider(0, 2.5, 0, 0.001, "Launch Control XL:0xb0:0x36");
 
@@ -116,9 +116,9 @@ var GLOBAL_ROTATION = merlinSlider(
   "Launch Control XL:0xb0:0x1e"
 );
 var GLOBAL_MOTION_SCALAR = merlinSlider(
-  -4,
-  4,
-  0,
+  -1,
+  3,
+  1,
   0.001,
   "Launch Control XL:0xb0:0x33"
 );
@@ -523,10 +523,14 @@ const dist_pos_2 = (x, y) =>
   Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D2_SCALAR + d2Offset - D2_OFFSET;
 const pulse_dist_pos = (x, y) =>
   dist_pos(x, y) -
-  (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE : 0);
+  (energyCacheHack
+    ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE * GLOBAL_MOTION_SCALAR
+    : 0);
 const pulse_dist_pos_2 = (x, y) =>
   dist_pos_2(x, y) -
-  (energyCacheHack ? energyCacheHack[PULSE_OCTAVE] * PULSE2_SIZE : 0);
+  (energyCacheHack
+    ? energyCacheHack[PULSE_OCTAVE] * PULSE2_SIZE * GLOBAL_MOTION_SCALAR
+    : 0);
 
 function calculateAngle(x1, y1, x2, y2) {
   // Calculate the angle in radians
