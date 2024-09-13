@@ -145,6 +145,8 @@ function invert() {
 var INVERTO = merlinButton(invert, "Launch Control XL:0x90:0x4c");
 var INVERTO2 = merlinButton(invert, "Launch Control XL:0x90:0x4b");
 
+var GLOBO_OPACITO = merlinSlider(0,150,100,0.01, "Launch Control XL:0xb0:0x50");
+
 let invertColor = false;
 
 let noise2XOffset = 0;
@@ -229,7 +231,7 @@ function render() {
       let energy = energies[octave] ?? 0;
       let hue = octaveHueMap((octave + 1) / energies.length);
       //if (isNaN(energy)) { console.log("REEEE")}
-      let brightness = energy * 100; //SCALE_CURVE(energy || 0) * 100;
+      let brightness = energy * GLOBO_OPACITO; //SCALE_CURVE(energy || 0) * 100;
       const color = [hue, 80, brightness];
 
       noStroke();
