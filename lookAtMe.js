@@ -32,7 +32,7 @@ function draw() {
       const underlying_value = Math.log(1 + (Math.abs((a + 0.5*(frameCount/50))) % 1)) / Math.log(2)
       
       // Adjust gradient calculation for more pronounced deadspace
-      const b_gradient = (1 - underlying_value*2+0.3 - d/10) * 180;  // Changed multipliers and added constants
+      const b_gradient = WAVE_OPACITY * (1 - underlying_value*2+0.3 - d/10) * 200;  // Changed multipliers and added constants
       
       // Apply the color! Now with a touch of blue for a serene ocean feel
       fill(200, 50, b_gradient);

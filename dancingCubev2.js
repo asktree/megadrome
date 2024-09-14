@@ -19,7 +19,7 @@ var BOX_FILL_BRIGHTNESS = merlinSlider(0, 100, 100, 0.1);
 var X_OFFSET = merlinSlider(-30, 30, 0, 0.01, "Launch Control XL:0xb0:0x23");
 var Y_OFFSET = merlinSlider(-40, 40, 0, 0.01, "Launch Control XL:0xb0:0x24");
 
-var SMOOTHING_COEFF = 0.3;
+var SMOOTHING_COEFF = 0.7;
 var ROLLING_FRAME_COUNT = 1;
 const HISTORY_BUFFER_SECONDS = 3;
 
@@ -90,7 +90,7 @@ function createEnergyGetter() {
 
   return () => {
     fft.analyze();
-    const bands = fft.getOctaveBands(10);
+    const bands = fft.getOctaveBands(1);
     const bandEnergies = fft.logAverages(bands);
     return bandEnergies.map((x) => x / 255).slice(0, -2); //can do slice(0, -2) to cut last 2 octaves
   };
@@ -104,7 +104,7 @@ function createCentroidGetter() {
   // https://p5js.org/reference/#/p5.AudioIn/start
   mic.start();
   // used to be 256. why?
-  const numFftBins = 1024; // Defaults to 1024. Must be power of 2.
+  const numFftBins = 512; // Defaults to 1024. Must be power of 2.
   const fft = new p5.FFT(SMOOTHING_COEFF, numFftBins);
   fft.setInput(mic);
   return () => {
