@@ -66,7 +66,7 @@ var D2_MOTION = merlinSlider(
 var D_OFFSET = merlinSlider(0, 10, 0, 0.1, "Launch Control XL:0xb0:0x31");
 var D2_OFFSET = merlinSlider(0, 2, 0, 0.1, "Launch Control XL:0xb0:0x35");
 
-var R_OFFSET = merlinSlider(0, 20, 0, 0.1, "Launch Control XL:0xb0:0x32");
+var R_OFFSET = merlinSlider(0, 10, 0, 0.1, "Launch Control XL:0xb0:0x32");
 var ORIGIN_X = merlinSlider(-100, 100, 21.5, 0.1);
 var ORIGIN_Y = merlinSlider(0, 66, 33, 0.1, "Impact LX25+ MIDI1:0xe0:0x0");
 var D_SCALAR = merlinSlider(0, 0.5, 0.1, 0.001, "Launch Control XL:0xb0:0xd");
@@ -216,6 +216,8 @@ function upsnarf() {
 
 let energyCacheHack = undefined;
 
+
+var lastSmoothing = 0
 function render() {
   const normalizedSmoothedEnergies = getEnergies();
   const rawEnergies = getRawEnergies();
@@ -241,6 +243,11 @@ function render() {
   }
   pop();
   if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
+
+  if (SMOOTHING_COEFF !== lastSmoothing) {
+    updateFFT();
+    lastSmoothing = SMOOTHING_COEFF;
+  }
 }
 
 // AUDIO UTILS
@@ -252,10 +259,12 @@ function updateFFT() {
   const mic = new p5.AudioIn();
   // Start processing audio input
   // https://p5js.org/reference/#/p5.AudioIn/start
-  mic.start();
+  //mic.start();
   // used to be 256. why?
-  fft = new p5.FFT(SMOOTHING_COEFF, NUM_FFT_BINS);
-  fft.setInput(mic);
+  fft.smooth(SMOOTHING_COEFF);
+  //bins(NUM_FFT_BINS);
+  //fft = new p5.FFT(SMOOTHING_COEFF, NUM_FFT_BINS);
+  //fft.setInput(mic);
 }
 
 function createEnergyGetter() {

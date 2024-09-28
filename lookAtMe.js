@@ -19,7 +19,7 @@ function draw() {
   for (var x = 0; x < width; x+=1) {
     for (var y = 0; y < height; y+=1) {
       // Calculate distance from center (25, 10)
-      const d = Math.hypot(x-25, y-10)/5
+      const d = Math.hypot(x-30, y-11)/5
       
       // Add some perlin noise for organic feel
       const n = noise(x*0.05, y*0.05, frameCount/600)
