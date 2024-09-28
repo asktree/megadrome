@@ -134,7 +134,7 @@ var SMOOTHING_COEFF = merlinSlider(
 );
 var NUM_OCTAVE_BINS = merlinSlider(2, 30, 10, 1, "Launch Control XL:0xb0:0x4f");
 
-var RESET_FFT = merlinButton(updateFFT, "Launch Control XL:0x90:0x49");
+var RESET_FFT = merlinButton(flushNormalizer, "Launch Control XL:0x90:0x49");
 
 function invert() {
   invertColor = !invertColor;
@@ -244,8 +244,8 @@ function render() {
   pop();
   if (SHOW_SPECTROGRAPH > 0) drawSpectrograph(energies, rawEnergies);
 
-  if (SMOOTHING_COEFF !== lastSmoothing) {
-    updateFFT();
+  if (SMOOTHING_COEFF != lastSmoothing) {
+    fft.smooth(SMOOTHING_COEFF);
     lastSmoothing = SMOOTHING_COEFF;
   }
 }
@@ -253,19 +253,6 @@ function render() {
 // AUDIO UTILS
 // ----------------
 
-function updateFFT() {
-  // Gets a reference to computer's microphone
-  // https://p5js.org/reference/#/p5.AudioIn
-  const mic = new p5.AudioIn();
-  // Start processing audio input
-  // https://p5js.org/reference/#/p5.AudioIn/start
-  //mic.start();
-  // used to be 256. why?
-  fft.smooth(SMOOTHING_COEFF);
-  //bins(NUM_FFT_BINS);
-  //fft = new p5.FFT(SMOOTHING_COEFF, NUM_FFT_BINS);
-  //fft.setInput(mic);
-}
 
 function createEnergyGetter() {
   // Gets a reference to computer's microphone
@@ -308,9 +295,14 @@ function createAudioSmoother(getEnergies) {
   };
 }
 
+
+let historicalEnergies = [];
+
+function flushNormalizer() {
+  historicalEnergies = [];
+}
 function createAudioNormalizer(getEnergies) {
   // array of energies over time
-  let historicalEnergies = [];
   return () => {
     const uneditedEnergies = getEnergies();
     const historyLength = HISTORY_BUFFER_SECONDS * 60;
