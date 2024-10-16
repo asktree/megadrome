@@ -11,6 +11,8 @@ function setup() {
 const GRADES = 1;
 var PULSE = merlinButton(mouseClicked, "Launch Control XL:0x90:0x5c");
 var PULSE2 = merlinButton(mouseClicked, "Launch Control XL:0x90:0x3c");
+var PULSE_ALT = merlinButton(mouseClicked, "DDJ-FLX4:0x97:0x6");
+var PULSE_ALT2 = merlinButton(mouseClicked, "DDJ-FLX4:0x97:0x7");
 
 const createPulseo = () => {
   return {

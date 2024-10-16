@@ -18,6 +18,7 @@ let getEnergies;
 let getRawEnergies;
 let cumUniformizer;
 var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0xf"); // k3A
+var HUE_OFFSET2 = 0 //merlinSlider(-50, 50, 0, 0.001, "DDJ-FLX4:0xb0:0x20");
 var HUE_RANGE = merlinSlider(
   -100,
   100,
@@ -144,6 +145,8 @@ function invert() {
 }
 var INVERTO = merlinButton(invert, "Launch Control XL:0x90:0x4c");
 var INVERTO2 = merlinButton(invert, "Launch Control XL:0x90:0x4b");
+var INVERTO3 = merlinButton(invert, "DDJ-FLX4:0x97:0x0");
+var INVERTO4 = merlinButton(invert, "DDJ-FLX4:0x97:0x1");
 
 var GLOBO_OPACITO = merlinSlider(0,150,100,0.01, "Launch Control XL:0xb0:0x50");
 
@@ -156,8 +159,15 @@ let d2Offset = 0;
 let rotationOffset = 0;
 let globalRotationOffset = 0;
 
-var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
+var SHOW_SPECTROGRAPH_B =  merlinButton(toggleSpectrograph, "Launch Control XL:0x80:0x59");
+
 let fft;
+var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
+
+//var SHOW_SPECTROGRAPH = false;
+function toggleSpectrograph() {
+  SHOW_SPECTROGRAPH = !SHOW_SPECTROGRAPH
+}
 
 function setup() {
   canvas = createCanvas(43, 66).canvas;
