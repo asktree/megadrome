@@ -18,6 +18,10 @@ let getEnergies;
 let getRawEnergies;
 let cumUniformizer;
 var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0xf"); // k3A
+var SATURATION_LOW_FREQ = merlinSlider(0, 100, 100, 0.001, "Launch Control XL:0xb0:0x13"); // k3A
+var SATURATION_HIGH_FREQ = merlinSlider(0, 100, 100, 0.001, "Launch Control XL:0xb0:0x14"); // k3A
+
+
 var HUE_OFFSET2 = 0 //merlinSlider(-50, 50, 0, 0.001, "DDJ-FLX4:0xb0:0x20");
 var HUE_RANGE = merlinSlider(
   -100,
@@ -26,6 +30,7 @@ var HUE_RANGE = merlinSlider(
   0.001,
   "Launch Control XL:0xb0:0x1f" // k3B
 );
+
 var NOISE2_SCALAR = merlinSlider(
   0,
   20,
@@ -242,9 +247,10 @@ function render() {
       let octave = cumToOctave(cum, energies);
       let energy = energies[octave] ?? 0;
       let hue = octaveHueMap((octave + 1) / energies.length);
+      let saturation = octaveSaturationMap((octave + 1) / energies.length);
       //if (isNaN(energy)) { console.log("REEEE")}
       let brightness = energy * GLOBO_OPACITO; //SCALE_CURVE(energy || 0) * 100;
-      const color = [hue, 80, brightness];
+      const color = [hue, saturation, brightness];
 
       noStroke();
       fill(...color);
@@ -506,6 +512,8 @@ const proportionalCumOctaveMap = () => (cum, energies) => {
 // CUM [0, 1] -> HUE
 const octaveHueMap = (cum) =>
   (500 + HUE_OFFSET + cum * HUE_RANGE + (invertColor ? 50 : 0)) % 100;
+
+const octaveSaturationMap = (x) => SATURATION_LOW_FREQ + (SATURATION_HIGH_FREQ - SATURATION_LOW_FREQ) * x;
 
 // PIXEL (x, y) -> CUM [0, 1]
 // ----------------
