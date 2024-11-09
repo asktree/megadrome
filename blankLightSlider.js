@@ -5,6 +5,8 @@
 let system;
 
 var BLANK_OPACITY = merlinSlider(0,1,1,0.001, "Launch Control XL:0xb0:0x52");
+var HUE_OFFSET = merlinSlider(0, 255, 0, 0.001, "Launch Control XL:0xb0:0x13"); // k3A
+
 
 
 function setup() {
@@ -13,8 +15,7 @@ function setup() {
   colorMode(HSL, 255)
 }
 
-const GRADES = 11
 
 function draw() {
-  background(200, 50, 150*BLANK_OPACITY);
+  background((255*2 + 200 + HUE_OFFSET) % 255, 50, 150*BLANK_OPACITY);
 }
