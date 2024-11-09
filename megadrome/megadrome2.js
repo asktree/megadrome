@@ -18,11 +18,22 @@ let getEnergies;
 let getRawEnergies;
 let cumUniformizer;
 var HUE_OFFSET = merlinSlider(0, 100, 0, 0.001, "Launch Control XL:0xb0:0xf"); // k3A
-var SATURATION_LOW_FREQ = merlinSlider(0, 100, 100, 0.001, "Launch Control XL:0xb0:0x13"); // k3A
-var SATURATION_HIGH_FREQ = merlinSlider(0, 100, 100, 0.001, "Launch Control XL:0xb0:0x14"); // k3A
+var SATURATION_LOW_FREQ = merlinSlider(
+  0,
+  100,
+  100,
+  0.001,
+  "Launch Control XL:0xb0:0x13"
+); // k3A
+var SATURATION_HIGH_FREQ = merlinSlider(
+  0,
+  100,
+  100,
+  0.001,
+  "Launch Control XL:0xb0:0x14"
+); // k3A
 
-
-var HUE_OFFSET2 = 0 //merlinSlider(-50, 50, 0, 0.001, "DDJ-FLX4:0xb0:0x20");
+var HUE_OFFSET2 = 0; //merlinSlider(-50, 50, 0, 0.001, "DDJ-FLX4:0xb0:0x20");
 var HUE_RANGE = merlinSlider(
   -100,
   100,
@@ -153,7 +164,13 @@ var INVERTO2 = merlinButton(invert, "Launch Control XL:0x90:0x4b");
 var INVERTO3 = merlinButton(invert, "DDJ-FLX4:0x97:0x0");
 var INVERTO4 = merlinButton(invert, "DDJ-FLX4:0x97:0x1");
 
-var GLOBO_OPACITO = merlinSlider(0,150,100,0.01, "Launch Control XL:0xb0:0x50");
+var GLOBO_OPACITO = merlinSlider(
+  0,
+  150,
+  100,
+  0.01,
+  "Launch Control XL:0xb0:0x50"
+);
 
 let invertColor = false;
 
@@ -164,14 +181,17 @@ let d2Offset = 0;
 let rotationOffset = 0;
 let globalRotationOffset = 0;
 
-var SHOW_SPECTROGRAPH_B =  merlinButton(toggleSpectrograph, "Launch Control XL:0x80:0x59");
+var SHOW_SPECTROGRAPH_B = merlinButton(
+  toggleSpectrograph,
+  "Launch Control XL:0x80:0x59"
+);
 
 let fft;
 var SHOW_SPECTROGRAPH = merlinSlider(0, 1, 0, 1, "Launch Control XL:0xb0:0x4e");
 
 //var SHOW_SPECTROGRAPH = false;
 function toggleSpectrograph() {
-  SHOW_SPECTROGRAPH = !SHOW_SPECTROGRAPH
+  SHOW_SPECTROGRAPH = !SHOW_SPECTROGRAPH;
 }
 
 function setup() {
@@ -231,8 +251,7 @@ function upsnarf() {
 
 let energyCacheHack = undefined;
 
-
-var lastSmoothing = 0
+var lastSmoothing = 0;
 function render() {
   const normalizedSmoothedEnergies = getEnergies();
   const rawEnergies = getRawEnergies();
@@ -268,7 +287,6 @@ function render() {
 
 // AUDIO UTILS
 // ----------------
-
 
 function createEnergyGetter() {
   // Gets a reference to computer's microphone
@@ -310,7 +328,6 @@ function createAudioSmoother(getEnergies) {
     return smoothedEnergies;
   };
 }
-
 
 let historicalEnergies = [];
 
@@ -513,7 +530,8 @@ const proportionalCumOctaveMap = () => (cum, energies) => {
 const octaveHueMap = (cum) =>
   (500 + HUE_OFFSET + cum * HUE_RANGE + (invertColor ? 50 : 0)) % 100;
 
-const octaveSaturationMap = (x) => SATURATION_LOW_FREQ + (SATURATION_HIGH_FREQ - SATURATION_LOW_FREQ) * x;
+const octaveSaturationMap = (x) =>
+  SATURATION_LOW_FREQ + (SATURATION_HIGH_FREQ - SATURATION_LOW_FREQ) * x;
 
 // PIXEL (x, y) -> CUM [0, 1]
 // ----------------
@@ -526,6 +544,22 @@ function createSimplexMap(f, g, h, i) {
   return (...args) =>
     noise.noise4D(f(...args), g(...args), h(...args), i(...args));
 }
+
+const getPulseSize = () => {
+  try {
+    return energyCacheHack
+      ? (energyCacheHack[2] * 0.6 +
+          energyCacheHack[3] * 0.4 +
+          energyCacheHack[1] * 0.4 +
+          energyCacheHack[0] * 0.1 +
+          energyCacheHack[4] * 0.1) *
+          PULSE_SIZE *
+          GLOBAL_MOTION_SCALAR
+      : 0;
+  } catch {
+    return 0;
+  }
+};
 
 // PIXEL (x, y) -> NOISE POS
 // ----------------
@@ -542,16 +576,8 @@ const dist_pos = (x, y) =>
   (invertColor ? 0.4 : 0);
 const dist_pos_2 = (x, y) =>
   Math.hypot(x - ORIGIN_X, y - ORIGIN_Y) * D2_SCALAR + d2Offset - D2_OFFSET;
-const pulse_dist_pos = (x, y) =>
-  dist_pos(x, y) -
-  (energyCacheHack
-    ? energyCacheHack[PULSE_OCTAVE] * PULSE_SIZE * GLOBAL_MOTION_SCALAR
-    : 0);
-const pulse_dist_pos_2 = (x, y) =>
-  dist_pos_2(x, y) -
-  (energyCacheHack
-    ? energyCacheHack[PULSE_OCTAVE] * PULSE2_SIZE * GLOBAL_MOTION_SCALAR
-    : 0);
+const pulse_dist_pos = (x, y) => dist_pos(x, y) - getPulseSize();
+const pulse_dist_pos_2 = (x, y) => dist_pos_2(x, y) - getPulseSize();
 
 function calculateAngle(x1, y1, x2, y2) {
   // Calculate the angle in radians
